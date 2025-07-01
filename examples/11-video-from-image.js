@@ -1,17 +1,29 @@
 import "dotenv/config";
-import { createWriteStream, existsSync, mkdirSync } from "node:fs";
+import {
+  readFileSync,
+  createWriteStream,
+  existsSync,
+  mkdirSync,
+} from "node:fs";
 import { join } from "node:path";
 import { Readable } from "node:stream";
 import { GoogleGenAI } from "@google/genai";
 
 const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_GEN_AI_KEY });
 
+const imagePath = join(import.meta.dirname, "../input/puppy.png");
+const imageBytes = readFileSync(imagePath);
+
 let operation = await ai.models.generateVideos({
   model: "veo-2.0-generate-001",
   prompt: "A cute puppy playing with a ball",
+  image: {
+    imageBytes,
+    mimeType: "image/png",
+  },
   config: {
-    personGeneration: "dont_allow",
     aspectRatio: "16:9",
+    numberOfVideos: 2,
   },
 });
 
@@ -28,7 +40,7 @@ operation.response?.generatedVideos?.forEach(async (generatedVideo, i) => {
   );
 
   const outputDir = join(import.meta.dirname, "../output");
-  const outputPath = join(outputDir, `puppy-${i}.mp4`);
+  const outputPath = join(outputDir, `puppy-from-image-${i}.mp4`);
   if (!existsSync(outputDir)) mkdirSync(outputDir);
 
   const writer = createWriteStream(outputPath);
